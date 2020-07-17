@@ -4,7 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-	"start": "node app.js",
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/Yunbok/HalliGalli/issues"
   },
-  "homepage": "https://github.com/Yunbok/HalliGalli#readme"
+  "homepage": "https://github.com/Yunbok/HalliGalli#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^2.3.0"
+  }
 }
