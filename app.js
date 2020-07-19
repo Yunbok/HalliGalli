@@ -109,7 +109,8 @@ io.on('connection', function(socket){
 			isReady = true;
 		}
 		
-		// player 임시제한 2명
+		// player 임시제한 2명 
+		// 게임시작 후 들어오면 CHATTER
 		if((users.filter(users => users.userInfo.isPlayer)).length<3 && !start){
 			isPlayer = true;	
 		}
@@ -240,20 +241,23 @@ io.on('connection', function(socket){
 		console.log(socket.userInfo);
 		
 		if(socket.id == host){
-			// 플레이어한명이상인것도 체크해야함, 모두레디이면
-			if(users.findIndex(item => item.userInfo.isReady === false) < 0){
+			// 플레이어한명이상
+			if((users.filter(users => users.userInfo.isPlayer)).length > 1){
+				//플레이어 모두 레디
+				if(users.findIndex(item => item.userInfo.isReady === false) < 0){
+					
+					// 접속된 모든 클라이언트에게 메시지를 전송한다
+					io.emit('start', socket.userInfo);
 				
-				// 접속된 모든 클라이언트에게 메시지를 전송한다
-				io.emit('start', socket.userInfo);
+					start = true;
+					// 이후 추가 구현필요, 테스트 인터페이스임,
+					// 최초 카드세팅
+					fn_setCard();
+					// io.to(users[0]).emit('card', 14);
 				
-				start = true;
-				// 이후 추가 구현필요, 테스트 인터페이스임,
-				// 최초 카드세팅
-				fn_setCard();
-				// io.to(users[0]).emit('card', 14);
-				
-				// 현재턴 user 로직필요
-				io.emit('turn', {sid: host});
+					// 현재턴 user 로직필요
+					io.emit('turn', {sid: host});
+				}
 			}
 		}
 	});
