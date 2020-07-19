@@ -86,7 +86,12 @@ var cards = [
 	{cid: 55, type: 4, num: 4},
 	{cid: 56, type: 4, num: 5}
 ];
-
+//카드덱 뒤집은 카드들
+var cardDeck = new Array();
+//뒤집혀 있는 카드들
+var openCards = [];
+//게임 시작여부
+var start = false;
 io.on('connection', function(socket){
 	// 접속한 클라이언트의 정보가 수신되면
 	socket.on('login', function(data) {
@@ -95,6 +100,8 @@ io.on('connection', function(socket){
 		var isHost = false;
 		var isPlayer = false;
 		var isReady = false;
+		//턴구분
+		var isTurn = false;
 		// 처음들어온사람 host 추후 방장바뀌는건 코딩해야함
 		if(users.length == 0){
 			host = socket.id;
@@ -102,8 +109,10 @@ io.on('connection', function(socket){
 			isReady = true;
 		}
 		
-		// player 제한하는 코드 필요함
-		isPlayer = true;
+		// player 임시제한 2명
+		if((users.filter(users => users.userInfo.isPlayer)).length<3 && !start){
+			isPlayer = true;	
+		}
 		
 		// socket에 클라이언트 정보를 저장한다
 		var userInfo = {
@@ -112,7 +121,8 @@ io.on('connection', function(socket){
 			userid: data.userid,
 			isPlayer: isPlayer,
 			isHost: isHost,
-			isReady: isReady
+			isReady: isReady,
+			isTurn: isTurn
 		};
 		socket.userInfo = userInfo;
 		// socket.userid = data.userid;
@@ -208,7 +218,13 @@ io.on('connection', function(socket){
 				if(users.findIndex(item => item.userInfo.isReady === false) < 0){
 					
 					// 방장에게만 메시지전송
-					io.to(host).emit('startOn', {sid: host});
+					var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
+					var readyPlayerCnt = (users.filter(users => users.userInfo.isReady)).length;
+					console.log("playerCnt: " + playerCnt);
+					console.log("readyPlayerCnt: " + readyPlayerCnt);
+					if(readyPlayerCnt == (playerCnt)){
+						io.to(host).emit('startOn', {sid: host});
+					}
 				}
 				else{
 					
@@ -230,6 +246,7 @@ io.on('connection', function(socket){
 				// 접속된 모든 클라이언트에게 메시지를 전송한다
 				io.emit('start', socket.userInfo);
 				
+				start = true;
 				// 이후 추가 구현필요, 테스트 인터페이스임,
 				// 최초 카드세팅
 				fn_setCard();
@@ -249,10 +266,59 @@ io.on('connection', function(socket){
 			// 순서도 체크해야겟지?
 			
 			var idx = users.findIndex(item => item.sid === socket.id);
-			var cid = users[idx].cardList.pop();
+			var cid = users[idx].cardInfo.cardList.dequeue();
 			var cardInfo = cards.find(item => item.cid === cid);
+			var cidx = openCards.findIndex(item => item.openCard.sid === socket.id);
+			openCards[cidx].openCard.cid = cid;
+			cardDeck.push(cid);
+			users[idx].cardInfo.cardCnt -=1
+			io.emit('openCard', {sid: socket.id, cardInfo: cardInfo, remain: users[idx].cardInfo.cardCnt});
+			users[idx].userInfo.isTurn = false;
 			
-			io.emit('openCard', {sid: socket.id, cardInfo: cardInfo, remain: users[idx].cardList.length});
+			if((users.filter(users => users.userInfo.isPlayer)).length > (idx+1)){
+				if(users[idx+1].userInfo.isPlayer){
+					users[idx+1].userInfo.isTurn = true;
+					io.emit('turn', {sid: users[idx+1].userInfo.sid});
+				}
+				else{
+					var num = users.findIndex(item => item.userInfo.isPlayer);
+					users[num].userInfo.isTurn = true;
+					io.emit('turn', {sid: users[num].userInfo.sid});
+				}
+			}
+			else{
+				var num = users.findIndex(item => item.userInfo.isPlayer);
+				users[num].userInfo.isTurn = true;
+				io.emit('turn', {sid: users[num].userInfo.sid});	
+			}
+			console.log(cardDeck);
+		}
+	});
+	
+	socket.on('bell', function(data) {
+		console.log('bell ' + socket.id);
+		console.log(socket.userInfo);
+		if(socket.userInfo.isPlayer == true){
+			var idx = users.findIndex(item => item.sid === socket.id);
+			var result = fn_bellCheck(socket.id);
+			if(result){
+				for(var i=0;i<openCards.length;i++){
+					openCards[i].openCard.cid = 0;
+				}
+				io.emit('success', '성공');
+			}
+			else{
+				var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
+				for(var i=0; i<playerCnt; i++){
+					if(socket.id === users[i].userInfo.sid){
+						continue;
+					}
+					else{
+						var cid = users[idx].cardInfo.cardList.dequeue();
+						users[i].cardInfo.cardList.enqueue(cid);
+					}
+				}
+			}
 		}
 	});
 });
@@ -260,22 +326,91 @@ io.on('connection', function(socket){
 function fn_gameCheck(){
 	
 }
+function fn_bellCheck(sid){
+	var type1 = 0;
+	var type2 = 0;
+	var type3 = 0;
+	var type4 = 0;
+	for(var i=0;i<openCards.length;i++){
+		if(openCards[i].openCard.cid === 0){
+			continue;
+		}
+		else{
+			var cardNum = cards.find(item => item.cid === openCards[i].openCard.cid)
+			switch(cards[cardNum].type){
+				case 1:
+					type1 += (cards.find(item => item.cid === openCards(i))).num;
+					break;
+				case 2:
+					type2 += (cards.find(item => item.cid === openCards(i))).num;
+					break;
+				case 3:
+					type3 += (cards.find(item => item.cid === openCards(i))).num;
+					break;
+				case 4:
+					type4 += (cards.find(item => item.cid === openCards(i))).num;
+					break;
+			}
+		}
+	}
+	if(type1 === 5 || type2 === 5 || type3 === 5 || type4 === 5){
+		var idx = users.findIndex(item => item.sid === sid);
+		for(var i=0;i<cardDeck.length;i++){
+			users[idx].cardInfo.cardList.enqueue(cardDeck.splice(i));
+		}
+		return true;
+	}
+	return false;
+}
 
 function fn_setCard(){
-	// 샘플코드임
-	// var cardList = [];
-	// for(var i=0; i<14; i++){
-	// 	cardList.push()
-	// }
+	for(var i=1;i<57;i++){
+		cardDeck.push(i);
+	}
+	//카드 정보
+	
+	var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
+	for(var i=0; i<playerCnt; i++){
+		var cardList = new Queue();
+		var cardInfo = {
+			cardCnt : 0,
+			cardList : cardList
+		};
+		 for(var j=0;j<Math.floor(56/playerCnt);j++){
+			 let target = cardDeck.splice(Math.floor(Math.random() * cardDeck.length), 1)[0];
+		 	 cardInfo.cardCnt +=1;
+			 cardInfo.cardList.enqueue(target);
+		 }
+		 users[i].cardInfo = cardInfo;
+		 var sid = users[i].userInfo.sid;
+		 var openCard = {
+			sid: sid,
+			cid: 0
+		};
+		 openCards.push({openCard : openCard});
+	 }
+	var num = users.findIndex(item => item.userInfo.sid === host);
+	users[num].userInfo.isTurn = true;
+	console.log(users[num].userInfo);
 	
 	// cid만 저장
-	users[0].cardList = [1,2,3,4,5,6,7,8,9,10,11,12,13,14];
+	//users[0].cardList = [1,2,3,4,5,6,7,8,9,10,11,12,13,14];
 }
 
 // function fn_random(num){
 // 	return Math.floor(Math.random() * num);
 // }
-
+class Queue {
+  constructor() {
+    this._arr = [];
+  }
+  enqueue(item) {
+    this._arr.push(item);
+  }
+  dequeue() {
+    return this._arr.shift();
+  }
+}
 server.listen(port, function(){
 	console.log('socket io server listening on port '+port);
 });
