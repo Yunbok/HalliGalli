@@ -181,6 +181,27 @@ io.on('connection', function(socket){
 			// 유저 삭제
 			users.splice(users.findIndex(item => item.sid === socket.id), 1);
 
+			//호스트 접속해제시 호스트변경
+			if(socket.id === host){
+				var idx = users.findIndex(item => item.sid === socket.id);
+				if((users.filter(users => users.userInfo.isPlayer)).length > (idx+1)){
+					if(users[idx+1].userInfo.isPlayer){
+						users[idx+1].userInfo.isHost = true;
+						io.emit('host', users[idx+1].userInfo);
+					}
+					else{
+						var num = users.findIndex(item => item.userInfo.isPlayer);
+						users[num].userInfo.isHost = true;
+						io.emit('host', users[num].userInfo);
+					}
+				}
+				else{
+					var num = users.findIndex(item => item.userInfo.isPlayer);
+					users[num].userInfo.isHost = true;
+					io.emit('host', users[num].userInfo);	
+				}
+				console.log("host out");
+			}
 			// 접속된 모든 클라이언트에게 메시지를 전송한다
 			io.emit('logout', socket.userInfo);
 		}
@@ -309,7 +330,7 @@ io.on('connection', function(socket){
 				for(var i=0;i<openCards.length;i++){
 					openCards[i].openCard.cid = 0;
 				}
-				io.emit('success', '성공');
+				io.emit('success', users[idx].cardInfo.cardCnt);
 			}
 			else{
 				var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
@@ -319,9 +340,13 @@ io.on('connection', function(socket){
 					}
 					else{
 						var cid = users[idx].cardInfo.cardList.dequeue();
+						users[idx].cardInfo.cardCnt -= 1;
 						users[i].cardInfo.cardList.enqueue(cid);
+						users[i].cardInfo.cardCnt += 1;
+						io.emit('cardCnt', users[i].cardInfo.cardCnt);
 					}
 				}
+				io.emit('fail', users[idx].cardInfo.cardCnt);
 			}
 		}
 	});
@@ -361,6 +386,7 @@ function fn_bellCheck(sid){
 		var idx = users.findIndex(item => item.sid === sid);
 		for(var i=0;i<cardDeck.length;i++){
 			users[idx].cardInfo.cardList.enqueue(cardDeck.splice(i));
+			users[idx].cardInfo.cardCnt += 1;
 		}
 		return true;
 	}
