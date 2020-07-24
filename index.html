@@ -32,6 +32,7 @@ var player;
 $(function(){
     // socket.io 서버에 접속한다
     socket = io();
+	//fn_socketInit();
 
     // 서버로 자신의 정보를 전송한다.
     // socket.emit("login", {
@@ -142,6 +143,14 @@ $(function(){
 		fn_openCard(data);
     });
 
+    // 서버로부터의 메시지가 수신되면
+    socket.on("success", function(data) {
+		console.log("success");
+    	console.log(data);
+		
+		fn_success(data);
+    });
+
 
     
 	player = new PlayerClass();
@@ -163,16 +172,20 @@ $(document).on("click", "#chatSend", function() {
 	
 // globalBtn 버튼이 클릭되면
 $(document).on("click", "#globalBtn", function() {
+	var btn = $('#globalBtn').attr('btn');
+	console.log(btn);
 	if(player.isPlayer == true){
-		if(player.isHost == true){
+		// if(player.isHost == true){
 			
-			// 서버로 메시지를 전송한다.
-			socket.emit("start", {  });
-		}
-		else{
-			// 서버로 메시지를 전송한다.
-			socket.emit("ready", {  });
-		}
+		// 	// 서버로 메시지를 전송한다.
+		// 	socket.emit("start", {  });
+		// }
+		// else{
+		// 	// 서버로 메시지를 전송한다.
+		// 	socket.emit("ready", {  });
+		// }
+		
+		socket.emit(btn, {  });
 	}
 	
 });
@@ -237,6 +250,30 @@ class Player {
 	}
 }
 */
+	
+function fn_saveSocket(){
+	//localStorage.getItem(CDE)
+	if(socket != null){
+		sessionStorage.setItem('socket', socket);
+	}
+}
+
+function fn_loadSocket(){
+	var loadSocket = sessionStorage.getItem('socket');
+	
+	if(loadSocket == null){
+		// socket.io 서버에 접속한다
+		return io();
+	}
+	else{
+		return loadSocket;
+	}
+}
+	
+function fn_socketInit(){
+	socket = fn_loadSocket();
+	fn_saveSocket();
+}
 
 function fn_currPlayer(data){
 	console.log(data);
@@ -304,14 +341,38 @@ function fn_gameInit(data){
 		
 		if(data.isHost == true){
 			$('#globalBtn').addClass('btn-secondary');
-			$('#globalBtn').text('대기');
+			$('#globalBtn').attr('act', '');
+			// $('#globalBtn').text('대기');
 		}
 		else{
 			$('#globalBtn').addClass('btn-warning');
-			$('#globalBtn').text('준비');
+			$('#globalBtn').attr('btn', 'ready');
+			// $('#globalBtn').text('준비');
 		}
+		
+		fn_globalBtnText();
 	}
 }
+
+function fn_globalBtnText(){
+	var btn = $('#globalBtn').attr('btn');
+	if(btn == ''){
+		$('#globalBtn').text('대기');
+	}
+	else if(btn == 'ready'){
+		$('#globalBtn').text('준비');	
+	}
+	else if(btn == 'readyOff'){
+		$('#globalBtn').text('준비취소');	
+	}
+	else if(btn == 'start'){
+		$('#globalBtn').text('게임시작');	
+	}
+	else if(btn == 'bell'){
+		$('#globalBtn').text('벨');	
+	}
+}
+	
 	
 function fn_readyOff(data){
 	$('#sid_'+data.sid+' .card-header').removeClass('bg-primary bg-warning bg-secondary');
@@ -322,7 +383,9 @@ function fn_readyOff(data){
 		$('#globalBtn').removeClass('btn-primary btn-warning btn-secondary');
 
 		$('#globalBtn').addClass('btn-warning');
-		$('#globalBtn').text('준비');
+		$('#globalBtn').attr('btn', 'ready');
+		// $('#globalBtn').text('준비');
+		fn_globalBtnText();
 	}
 }
 	
@@ -335,7 +398,9 @@ function fn_readyOn(data){
 		$('#globalBtn').removeClass('btn-primary btn-warning btn-secondary');
 
 		$('#globalBtn').addClass('btn-secondary');
-		$('#globalBtn').text('준비취소');
+		$('#globalBtn').attr('btn', 'readyOff');
+		// $('#globalBtn').text('준비취소');
+		fn_globalBtnText();
 	}
 }
 	
@@ -348,7 +413,9 @@ function fn_startOff(data){
 		$('#globalBtn').removeClass('btn-primary btn-warning btn-secondary');
 
 		$('#globalBtn').addClass('btn-secondary');
-		$('#globalBtn').text('대기');
+		$('#globalBtn').attr('btn', '');
+		// $('#globalBtn').text('대기');
+		fn_globalBtnText();
 	}
 }
 	
@@ -361,7 +428,9 @@ function fn_startOn(data){
 		$('#globalBtn').removeClass('btn-primary btn-warning btn-secondary');
 
 		$('#globalBtn').addClass('btn-warning');
-		$('#globalBtn').text('게임시작');
+		// $('#globalBtn').text('게임시작');
+		$('#globalBtn').attr('btn', 'start');
+		fn_globalBtnText();
 	}
 }
 	
@@ -374,12 +443,14 @@ function fn_start(data){
 		$('#globalBtn').removeClass('btn-primary btn-warning btn-secondary');
 
 		$('#globalBtn').addClass('btn-primary');
-		$('#globalBtn').text('벨');
+		// $('#globalBtn').text('벨');
+		$('#globalBtn').attr('btn', 'bell');
+		fn_globalBtnText();
 	}
 }
 	
 function fn_turn(data){
-	$('#sid_'+data.sid+' .card-header').removeClass('bg-primary bg-warning bg-secondary');
+	$('.card-header').removeClass('bg-primary bg-warning bg-secondary');
 	$('#sid_'+data.sid+' .card-header').addClass('bg-warning');
 	
 	if(player.sid == data.sid){
@@ -393,6 +464,12 @@ function fn_turn(data){
 function fn_openCard(data){
 	$('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
 	$('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
+	$('#sid_'+data.sid+' .cRemain').text(data.remain);
+}
+
+function fn_success(data){
+	// $('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
+	// $('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
 	$('#sid_'+data.sid+' .cRemain').text(data.remain);
 }
 	
@@ -417,7 +494,7 @@ function fn_openCard(data){
 						<button type="button" class="btn btn-block" id="openBtn" >카드오픈</button>
 					</div>
 					<div class="col">
-						<button type="button" class="btn btn-block" id="globalBtn" ></button>
+						<button type="button" class="btn btn-block" id="globalBtn" btn="" ></button>
 					</div>
 				</div>
 			</div>
