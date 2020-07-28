@@ -103,7 +103,8 @@ io.on('connection', function(socket){
 		//턴구분
 		var isTurn = false;
 		// 처음들어온사람 host 추후 방장바뀌는건 코딩해야함
-		if(users.length == 0){
+		var hostCnt = (users.filter(users => users.userInfo.isHost)).length;
+		if(users.length == 0 || hostCnt == 0){
 			host = socket.id;
 			isHost = true;
 			isReady = true;
@@ -111,7 +112,7 @@ io.on('connection', function(socket){
 		
 		// player 임시제한 2명 
 		// 게임시작 후 들어오면 CHATTER
-		if((users.filter(users => users.userInfo.isPlayer)).length<3 && !start){
+		if((users.filter(users => users.userInfo.isPlayer)).length < PLAYER_CNT_LIMIT && !start){
 			isPlayer = true;	
 		}
 		
@@ -180,27 +181,29 @@ io.on('connection', function(socket){
 			console.log('user remove: ' + socket.userInfo.name);
 			// 유저 삭제
 			users.splice(users.findIndex(item => item.sid === socket.id), 1);
-
+			var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
 			//호스트 접속해제시 호스트변경
 			if(socket.id === host){
-				var idx = users.findIndex(item => item.sid === socket.id);
-				if((users.filter(users => users.userInfo.isPlayer)).length > (idx+1)){
-					if(users[idx+1].userInfo.isPlayer){
-						users[idx+1].userInfo.isHost = true;
-						io.emit('host', users[idx+1].userInfo);
+				if(users.length > 0 && playerCnt > 0){
+					var idx = users.findIndex(item => item.sid === socket.id);
+					if((users.filter(users => users.userInfo.isPlayer)).length > (idx+1)){
+						if(users[idx+1].userInfo.isPlayer){
+							users[idx+1].userInfo.isHost = true;
+							io.emit('host', users[idx+1].userInfo);
+						}
+						else{
+							var num = users.findIndex(item => item.userInfo.isPlayer);
+							users[num].userInfo.isHost = true;
+							io.emit('host', users[num].userInfo);
+						}
 					}
 					else{
 						var num = users.findIndex(item => item.userInfo.isPlayer);
 						users[num].userInfo.isHost = true;
-						io.emit('host', users[num].userInfo);
-					}
-				}
-				else{
-					var num = users.findIndex(item => item.userInfo.isPlayer);
-					users[num].userInfo.isHost = true;
-					io.emit('host', users[num].userInfo);	
+						io.emit('host', users[num].userInfo);	
 				}
 				console.log("host out");
+				}
 			}
 			// 접속된 모든 클라이언트에게 메시지를 전송한다
 			io.emit('logout', socket.userInfo);
@@ -299,22 +302,22 @@ io.on('connection', function(socket){
 			users[idx].cardInfo.cardCnt -=1
 			io.emit('openCard', {sid: socket.id, cardInfo: cardInfo, remain: users[idx].cardInfo.cardCnt});
 			users[idx].userInfo.isTurn = false;
-			
-			if((users.filter(users => users.userInfo.isPlayer)).length > (idx+1)){
-				if(users[idx+1].userInfo.isPlayer){
-					users[idx+1].userInfo.isTurn = true;
-					io.emit('turn', {sid: users[idx+1].userInfo.sid});
+			var turnIdx = idx;
+			for(var i = turnIdx;i<users.length+1;i++){
+				turnIdx+=1;
+				if((users.filter(users => users.userInfo.isPlayer)).length > (turnIdx)){
+					if(users[turnIdx].userInfo.isPlayer && users[turnIdx].cardInfo.cardCnt >0){
+						users[turnIdx].userInfo.isTurn = true;
+						io.emit('turn', {sid: users[turnIdx].userInfo.sid});
+						break;
+					}
 				}
 				else{
 					var num = users.findIndex(item => item.userInfo.isPlayer);
 					users[num].userInfo.isTurn = true;
 					io.emit('turn', {sid: users[num].userInfo.sid});
+					break;
 				}
-			}
-			else{
-				var num = users.findIndex(item => item.userInfo.isPlayer);
-				users[num].userInfo.isTurn = true;
-				io.emit('turn', {sid: users[num].userInfo.sid});	
 			}
 			console.log(cardDeck);
 		}
@@ -330,7 +333,16 @@ io.on('connection', function(socket){
 				for(var i=0;i<openCards.length;i++){
 					openCards[i].openCard.cid = 0;
 				}
-				io.emit('success', users[idx].cardInfo.cardCnt);
+				console.log(cardDeck.length);
+				var length = cardDeck.length;
+				for(var i=0;i<length;i++){
+					var target = cardDeck.splice(Math.floor(0), 1)[0];
+					console.log("target"+target);
+					users[idx].cardInfo.cardList.enqueue(target);
+					users[idx].cardInfo.cardCnt += 1;
+				}
+				console.log(users[idx].cardInfo.cardList);
+				io.emit('success', {sid: socket.id, remain :users[idx].cardInfo.cardCnt});
 			}
 			else{
 				var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
@@ -343,10 +355,10 @@ io.on('connection', function(socket){
 						users[idx].cardInfo.cardCnt -= 1;
 						users[i].cardInfo.cardList.enqueue(cid);
 						users[i].cardInfo.cardCnt += 1;
-						io.emit('cardCnt', users[i].cardInfo.cardCnt);
+						io.emit('cardCnt', {sid: users[i].userInfo.sid, remain :users[i].cardInfo.cardCnt});
 					}
 				}
-				io.emit('fail', users[idx].cardInfo.cardCnt);
+				io.emit('fail',  {sid: socket.id, remain :users[idx].cardInfo.cardCnt});
 			}
 		}
 	});
@@ -365,29 +377,25 @@ function fn_bellCheck(sid){
 			continue;
 		}
 		else{
-			var cardNum = cards.find(item => item.cid === openCards[i].openCard.cid)
-			switch(cards[cardNum].type){
+			var cardType = (cards.find(item => item.cid === openCards[i].openCard.cid)).type;
+			console.log(cardType);
+			switch(cardType){
 				case 1:
-					type1 += (cards.find(item => item.cid === openCards(i))).num;
+					type1 += (cards.find(item => item.cid === openCards[i].openCard.cid)).num;
 					break;
 				case 2:
-					type2 += (cards.find(item => item.cid === openCards(i))).num;
+					type2 += (cards.find(item => item.cid === openCards[i].openCard.cid)).num;
 					break;
 				case 3:
-					type3 += (cards.find(item => item.cid === openCards(i))).num;
+					type3 += (cards.find(item => item.cid === openCards[i].openCard.cid)).num;
 					break;
 				case 4:
-					type4 += (cards.find(item => item.cid === openCards(i))).num;
+					type4 += (cards.find(item => item.cid === openCards[i].openCard.cid)).num;
 					break;
 			}
 		}
 	}
 	if(type1 === 5 || type2 === 5 || type3 === 5 || type4 === 5){
-		var idx = users.findIndex(item => item.sid === sid);
-		for(var i=0;i<cardDeck.length;i++){
-			users[idx].cardInfo.cardList.enqueue(cardDeck.splice(i));
-			users[idx].cardInfo.cardCnt += 1;
-		}
 		return true;
 	}
 	return false;
@@ -431,15 +439,15 @@ function fn_setCard(){
 // 	return Math.floor(Math.random() * num);
 // }
 class Queue {
-  constructor() {
-    this._arr = [];
-  }
-  enqueue(item) {
-    this._arr.push(item);
-  }
-  dequeue() {
-    return this._arr.shift();
-  }
+	constructor() {
+		this._arr = [];
+	}
+	enqueue(item) {
+		this._arr.push(item);
+	}
+	dequeue() {
+		return this._arr.shift();
+	}
 }
 server.listen(port, function(){
 	console.log('socket io server listening on port '+port);
