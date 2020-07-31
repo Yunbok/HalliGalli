@@ -2,7 +2,7 @@ var express = require('express');
 var app = require('express')();
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
-var port = process.env.PORT || 8080;
+var port = process.env.PORT || 8080;  
 
 
 //app.use('/s01', express.static(__dirname + '/s01'));
@@ -326,8 +326,9 @@ io.on('connection', function(socket){
 	socket.on('bell', function(data) {
 		console.log('bell ' + socket.id);
 		console.log(socket.userInfo);
-		if(socket.userInfo.isPlayer == true){
-			var idx = users.findIndex(item => item.sid === socket.id);
+		var idx = users.findIndex(item => item.sid === socket.id);
+		var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
+		if(socket.userInfo.isPlayer == true && users[idx].cardInfo.cardCnt > -(playerCnt-1)){
 			var result = fn_bellCheck(socket.id);
 			if(result){
 				for(var i=0;i<openCards.length;i++){
@@ -345,20 +346,27 @@ io.on('connection', function(socket){
 				io.emit('success', {sid: socket.id, remain :users[idx].cardInfo.cardCnt});
 			}
 			else{
-				var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
 				for(var i=0; i<playerCnt; i++){
 					if(socket.id === users[i].userInfo.sid){
 						continue;
 					}
 					else{
-						var cid = users[idx].cardInfo.cardList.dequeue();
-						users[idx].cardInfo.cardCnt -= 1;
-						users[i].cardInfo.cardList.enqueue(cid);
-						users[i].cardInfo.cardCnt += 1;
-						io.emit('cardCnt', {sid: users[i].userInfo.sid, remain :users[i].cardInfo.cardCnt});
+						if(users[idx].cardInfo.cardList.length > 0){
+							var cid = users[idx].cardInfo.cardList.dequeue();
+							users[idx].cardInfo.cardCnt -= 1;
+							users[i].cardInfo.cardList.enqueue(cid);
+							users[i].cardInfo.cardCnt += 1;
+							io.emit('cardCnt', {sid: users[i].userInfo.sid, remain :users[i].cardInfo.cardCnt});
+						}
+						else{
+							users[idx].cardInfo.cardCnt -= 1;
+						}
 					}
 				}
 				io.emit('fail',  {sid: socket.id, remain :users[idx].cardInfo.cardCnt});
+				if(users[idx].cardInfo.cardCnt <= -(playerCnt-1)){
+					io.emit('out',  {sid: socket.id});
+				}
 			}
 		}
 	});
