@@ -305,17 +305,15 @@ io.on('connection', function(socket){
 			var turnIdx = idx;
 			for(var i = turnIdx;i<users.length+1;i++){
 				turnIdx+=1;
-				if((users.filter(users => users.userInfo.isPlayer)).length > (turnIdx)){
-					if(users[turnIdx].userInfo.isPlayer && users[turnIdx].cardInfo.cardCnt >0){
-						users[turnIdx].userInfo.isTurn = true;
-						io.emit('turn', {sid: users[turnIdx].userInfo.sid});
-						break;
-					}
-				}
-				else{
-					var num = users.findIndex(item => item.userInfo.isPlayer);
+				if(turnIdx > users.length){
+					var num = users.findIndex(item => (item.userInfo.isPlayer && item.cardInfo.cardCnt > 0));
 					users[num].userInfo.isTurn = true;
 					io.emit('turn', {sid: users[num].userInfo.sid});
+					break;
+				}
+				else if(users[turnIdx].userInfo.isPlayer && users[turnIdx].cardInfo.cardCnt >0){
+					users[turnIdx].userInfo.isTurn = true;
+					io.emit('turn', {sid: users[turnIdx].userInfo.sid});
 					break;
 				}
 			}
