@@ -211,6 +211,13 @@ io.on('connection', function(socket){
 			// 접속된 모든 클라이언트에게 메시지를 전송한다
 			io.emit('logout', socket.userInfo);
 		}
+		
+		var survivor = (users.filter(users => !users.userInfo.isOut)).length;
+		if(survivor == 1){
+			start = false;
+			var idx = users.findIndex(item => !item.userInfo.isOut);
+			io.emit('end',  {sid: users[idx].userInfo.sid});
+		}
 	});
 	
 	
@@ -272,14 +279,15 @@ io.on('connection', function(socket){
 			if((users.filter(users => users.userInfo.isPlayer)).length > 1){
 				//플레이어 모두 레디
 				if(users.findIndex(item => item.userInfo.isReady === false) < 0){
-					
+					// 최초 카드세팅
+					fn_setCard();
+					//보너스 카드 수
+					io.emit('bonus', {bonus: cardDeck.length});
 					// 접속된 모든 클라이언트에게 메시지를 전송한다
 					io.emit('start', socket.userInfo);
 				
 					start = true;
 					// 이후 추가 구현필요, 테스트 인터페이스임,
-					// 최초 카드세팅
-					fn_setCard();
 					// io.to(users[0]).emit('card', 14);
 				
 					// 현재턴 user 로직필요
@@ -303,8 +311,9 @@ io.on('connection', function(socket){
 			var cidx = openCards.findIndex(item => item.openCard.sid === socket.id);
 			openCards[cidx].openCard.cid = cid;
 			cardDeck.push(cid);
-			users[idx].cardInfo.cardCnt -=1
-			io.emit('openCard', {sid: socket.id, cardInfo: cardInfo, remain: users[idx].cardInfo.cardCnt});
+			users[idx].cardInfo.cardCnt -=1;
+			users[idx].cardInfo.openCards +=1;
+			io.emit('openCard', {sid: socket.id, cardInfo: cardInfo, remain: users[idx].cardInfo.cardCnt, cardInfo2: users[idx].cardInfo});
 			fn_turn(idx);
 			console.log(cardDeck);
 		}
@@ -331,36 +340,46 @@ io.on('connection', function(socket){
 				}
 				console.log(users[idx].cardInfo.cardList);
 				for(var i=0; i<playerCnt; i++){
+					users[idx].cardInfo.openCards = 0;
 					if(users[idx].cardInfo.cardCnt <= 0){
-						users[idx].userInfo.isOut = true;
+						users[idx].userInfo.isOut = true; 
 					}
 				}
-				io.emit('success', {sid: socket.id, remain :users[idx].cardInfo.cardCnt});
+				io.emit('success', users);
+				io.emit('bonus', {bonus: cardDeck.length});
 			}
 			else{
-				for(var i=0; i<playerCnt; i++){
-					if(socket.id === users[i].userInfo.sid || users[i].userInfo.isOut == true){
-						continue;
-					}
-					else{
-						if(users[idx].cardInfo.cardCnt > 0){
-							var cid = users[idx].cardInfo.cardList.dequeue();
-							users[idx].cardInfo.cardCnt -= 1;
-							users[i].cardInfo.cardList.enqueue(cid);
-							users[i].cardInfo.cardCnt += 1;
-							io.emit('cardCnt', {sid: users[i].userInfo.sid, remain :users[i].cardInfo.cardCnt});
-						}
-						else{
-							fn_turn(idx);
-						}
-					}
-				}
-				io.emit('fail',  {sid: socket.id, remain :users[idx].cardInfo.cardCnt});
-				if(users[idx].cardInfo.cardCnt <= -(playerCnt-1)){
+				if(users[idx].cardInfo.cardCnt == 0){
 					users[idx].userInfo.isOut = true;
 					io.emit('out',  {sid: socket.id});
+					socket.disconnect();
 				}
+				else{
+					for(var i=0; i<playerCnt; i++){
+						if(socket.id === users[i].userInfo.sid || users[i].userInfo.isOut == true){
+							continue;
+						}
+						else{
+							if(users[idx].cardInfo.cardCnt > 0){
+								var cid = users[idx].cardInfo.cardList.dequeue();
+								users[idx].cardInfo.cardCnt -= 1;
+								users[i].cardInfo.cardList.enqueue(cid);
+								users[i].cardInfo.cardCnt += 1;
+							}
+							else{
+								fn_turn(idx);
+							}
+						}
+					}
+				}
+				io.emit('fail',  users);
 			}
+		}
+		var survivor = (users.filter(users => !users.userInfo.isOut)).length;
+		if(survivor == 1){
+			start = false;
+			var idx = users.findIndex(item => !item.userInfo.isOut);
+			io.emit('end',  {sid: users[idx].userInfo.sid});
 		}
 	});
 });
@@ -413,7 +432,8 @@ function fn_setCard(){
 		var cardList = new Queue();
 		var cardInfo = {
 			cardCnt : 0,
-			cardList : cardList
+			cardList : cardList,
+			openCards : 0
 		};
 		 for(var j=0;j<Math.floor(56/playerCnt);j++){
 			 let target = cardDeck.splice(Math.floor(Math.random() * cardDeck.length), 1)[0];
@@ -451,6 +471,13 @@ function fn_turn(idx){
 			users[turnIdx].userInfo.isTurn = true;
 			io.emit('turn', {sid: users[turnIdx].userInfo.sid});
 			break;
+		}
+		else if(!users[turnIdx].userInfo.isPlayer){
+			continue;
+		}
+		else{
+			start = false;
+			io.emit('end',  {sid: socket.id});
 		}
 	}
 }

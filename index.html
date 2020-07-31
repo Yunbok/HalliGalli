@@ -150,6 +150,49 @@ $(function(){
 		
 		fn_success(data);
     });
+	
+	 // 서버로부터의 메시지가 수신되면
+    socket.on("fail", function(data) {
+		console.log("fail");
+    	console.log(data);
+		
+		fn_fail(data);
+    });
+	
+	// 서버로부터의 메시지가 수신되면
+    socket.on("bonus", function(data) {
+		console.log("bonus");
+    	console.log(data);
+		
+		fn_bonus(data);
+    });
+	
+	
+	// 서버로부터의 메시지가 수신되면
+    socket.on("end", function(data) {
+		console.log("end");
+    	console.log(data);
+		
+		fn_end(data);
+    });
+	
+	// 서버로부터의 메시지가 수신되면
+    socket.on("out", function(data) {
+		console.log("out");
+    	console.log(data);
+		
+		fn_out(data);
+    });
+	
+	// 서버로부터의 메시지가 수신되면
+    socket.on("host", function(data) {
+		console.log("out");
+    	console.log(data);
+		
+		fn_setHost(data);
+		
+		fn_gameInit(data);
+    });
 
 
     
@@ -303,6 +346,7 @@ function fn_addPlayer(data){
 	HTML += '				<li class="cType" ></li>';
 	HTML += '				<li class="cNum" ></li>';
 	HTML += '				<li class="cRemain" ></li>';
+	HTML += '				<li class="cOpenCards" ></li>';
 	HTML += '			</ul>';
 	HTML += '		</div>';
 	HTML += '	</div>';
@@ -464,7 +508,7 @@ function fn_turn(data){
 
 function fn_openCard(data){
 	console.log(data);
-	var HTML = ''
+	var HTML = '';
 	for(var i=0; i<data.cardInfo.num; i++){
 		HTML += '<img src="/images/'+data.cardInfo.type+'.gif" />';
 	}
@@ -472,12 +516,46 @@ function fn_openCard(data){
 	$('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
 	$('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
 	$('#sid_'+data.sid+' .cRemain').text(data.remain);
+	$('#sid_'+data.sid+' .cOpenCards').text(data.cardInfo2.openCards);
 }
 
 function fn_success(data){
 	// $('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
 	// $('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
-	$('#sid_'+data.sid+' .cRemain').text(data.remain);
+	for(var i = 0; i<data.length; i++){	
+		if(data[i].userInfo.isPlayer){
+			$('#sid_'+data[i].sid+' .cRemain').text(data[i].cardInfo.cardCnt);
+			$('#sid_'+data[i].sid+' .cImg').html('');
+			$('#sid_'+data[i].sid+' .cType').text('');
+			$('#sid_'+data[i].sid+' .cNum').text('');
+			$('#sid_'+data[i].sid+' .cOpenCards').text('');
+		}
+	}
+}
+	
+function fn_fail(data){
+	// $('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
+	// $('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
+	for(var i = 0; i<data.length; i++){	
+		if(data[i].userInfo.isPlayer){
+			$('#sid_'+data[i].sid+' .cRemain').text(data[i].cardInfo.cardCnt);
+		}
+	}
+}
+	
+function fn_bonus(data){
+	$('#bonusCnt').text(data.bonus); 
+}
+	
+function fn_end(data){
+	
+}
+	
+function fn_out(data){
+	if(data.sid == player.sid){
+		alert('수준에 맞는 곳에서 노세요.');
+		location.href = 'http://www.zuzunza.com/';
+	}
 }
 	
 </script>
@@ -493,9 +571,7 @@ function fn_success(data){
 				
 				<div class="row">
 					<div class="col">
-						<p>
-							남은카드
-						</p>
+						<p>보너스: <span id="bonusCnt">0</span></p>
 					</div>
 					<div class="col" style="display: none;">
 						<button type="button" class="btn btn-block" id="openBtn" >카드오픈</button>
