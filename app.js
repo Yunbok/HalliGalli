@@ -103,7 +103,7 @@ io.on('connection', function(socket){
 		//턴구분
 		var isTurn = false;
 		//게임 아웃 구분
-		var isOut = false;
+		var isOut = true;
 		// 처음들어온사람 host 추후 방장바뀌는건 코딩해야함
 		var hostCnt = (users.filter(users => users.userInfo.isHost)).length;
 		if(users.length == 0 || hostCnt == 0){
@@ -115,7 +115,8 @@ io.on('connection', function(socket){
 		// player 임시제한 2명 
 		// 게임시작 후 들어오면 CHATTER
 		if((users.filter(users => users.userInfo.isPlayer)).length < PLAYER_CNT_LIMIT && !start){
-			isPlayer = true;	
+			isPlayer = true;
+			isOut = false;
 		}
 		
 		// socket에 클라이언트 정보를 저장한다
@@ -193,31 +194,29 @@ io.on('connection', function(socket){
 						if(users[idx+1].userInfo.isPlayer){
 							users[idx+1].userInfo.isHost = true;
 							io.emit('host', users[idx+1].userInfo);
+							host = users[idx+1].userInfo.sid;
 						}
 						else{
 							var num = users.findIndex(item => item.userInfo.isPlayer);
 							users[num].userInfo.isHost = true;
 							io.emit('host', users[num].userInfo);
+							host = users[num].userInfo.sid;
 						}
 					}
 					else{
 						var num = users.findIndex(item => item.userInfo.isPlayer);
 						users[num].userInfo.isHost = true;
 						io.emit('host', users[num].userInfo);	
-				}
-				console.log("host out");
+						host = users[num].userInfo.sid;
+					}
+					console.log("host out");
 				}
 			}
 			// 접속된 모든 클라이언트에게 메시지를 전송한다
 			io.emit('logout', socket.userInfo);
 		}
-		
-		var survivor = (users.filter(users => !users.userInfo.isOut)).length;
-		if(survivor == 1){
-			start = false;
-			var idx = users.findIndex(item => !item.userInfo.isOut);
-			io.emit('end',  {sid: users[idx].userInfo.sid});
-		}
+		fn_end();
+	
 	});
 	
 	
@@ -339,11 +338,18 @@ io.on('connection', function(socket){
 					users[idx].cardInfo.cardCnt += 1;
 				}
 				console.log(users[idx].cardInfo.cardList);
+				var outObj = new Array();
 				for(var i=0; i<playerCnt; i++){
-					users[idx].cardInfo.openCards = 0;
-					if(users[idx].cardInfo.cardCnt <= 0){
-						users[idx].userInfo.isOut = true; 
+					console.log(users[i]);
+					users[i].cardInfo.openCards = 0;
+					if(users[i].cardInfo.cardCnt == 0){
+						users[i].userInfo.isOut = true; 
+						io.emit('out',  {sid: users[i].userInfo.sid});
+						outObj.push(io.of("/").connected[users[i].userInfo.sid]);
 					}
+				}
+				for(var i=0; i<outObj.length; i++){
+					outObj[i].disconnect();
 				}
 				io.emit('success', users);
 				io.emit('bonus', {bonus: cardDeck.length});
@@ -371,16 +377,14 @@ io.on('connection', function(socket){
 							}
 						}
 					}
+					if(users[idx].cardInfo.cardCnt == 0){
+						fn_turn(idx);
+					}
 				}
 				io.emit('fail',  users);
 			}
 		}
-		var survivor = (users.filter(users => !users.userInfo.isOut)).length;
-		if(survivor == 1){
-			start = false;
-			var idx = users.findIndex(item => !item.userInfo.isOut);
-			io.emit('end',  {sid: users[idx].userInfo.sid});
-		}
+		fn_end();
 	});
 });
 
@@ -476,9 +480,24 @@ function fn_turn(idx){
 			continue;
 		}
 		else{
+			console.log('AAAAAAAAAA');
+			console.log(idx);
+			console.log(users[idx]);
 			start = false;
-			io.emit('end',  {sid: socket.id});
+			cardDeck = new Array();
+			io.emit('end',  users[idx].userInfo);
 		}
+	}
+}
+
+function fn_end(){
+	var survivor = (users.filter(users => !users.userInfo.isOut)).length;
+	if(survivor == 1){
+		start = false;
+		var idx = users.findIndex(item => !item.userInfo.isOut);
+		cardDeck = new Array();
+		users[idx].userInfo.isTurn = false;
+		io.emit('end',  users[idx].userInfo);
 	}
 }
 // function fn_random(num){

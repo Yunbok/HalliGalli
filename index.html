@@ -186,12 +186,14 @@ $(function(){
 	
 	// 서버로부터의 메시지가 수신되면
     socket.on("host", function(data) {
-		console.log("out");
-    	console.log(data);
-		
-		fn_setHost(data);
-		
-		fn_gameInit(data);
+		console.log("host");
+		if(data.sid == socket.id){
+			console.log(data);
+
+			fn_setHost(data);
+
+			fn_gameInit(data);
+		}
     });
 
 
@@ -227,6 +229,9 @@ $(document).on("click", "#globalBtn", function() {
 		// 	// 서버로 메시지를 전송한다.
 		// 	socket.emit("ready", {  });
 		// }
+		if(btn == 'readyOff'){
+		   btn = 'ready';
+		}
 		
 		socket.emit(btn, {  });
 	}
@@ -321,15 +326,18 @@ function fn_socketInit(){
 function fn_currPlayer(data){
 	console.log(data);
 	for(var i=0; i<data.length; i++){
-		fn_addPlayer(data[i].userInfo);
-		
-		if(data[i].userInfo.isHost == true){
-			fn_setHost(data[i]);
+		console.log(data[i]);
+		if(data[i].userInfo.isPlayer == true){
+			fn_addPlayer(data[i].userInfo);
+
+			if(data[i].userInfo.isHost == true){
+				fn_setHost(data[i]);
+			}
+
+			// if(data[i].userInfo.sid == socket.id){
+			// 	fn_setMe(data[i]);
+			// }
 		}
-		
-		// if(data[i].userInfo.sid == socket.id){
-		// 	fn_setMe(data[i]);
-		// }
 	}
 }	
 
@@ -395,7 +403,11 @@ function fn_gameInit(data){
 			// $('#globalBtn').text('준비');
 		}
 		
-		fn_globalBtnText();
+		$('#openBtn').parent().hide();
+		
+		if(data.sid == socket.id){
+			fn_globalBtnText();
+		}
 	}
 }
 
@@ -548,7 +560,15 @@ function fn_bonus(data){
 }
 	
 function fn_end(data){
-	
+	$('#sid_'+data.sid+' .cRemain').text('');
+	$('#sid_'+data.sid+' .cImg').html('');
+	$('#sid_'+data.sid+' .cType').text('');
+	$('#sid_'+data.sid+' .cNum').text('');
+	$('#sid_'+data.sid+' .cOpenCards').text('');
+	if(data.sid == socket.id){	
+		$('#globalBtn').attr('btn', '');
+		fn_gameInit(data);
+	}
 }
 	
 function fn_out(data){
