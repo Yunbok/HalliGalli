@@ -299,6 +299,7 @@ function fn_addPlayer(data){
 	HTML += '		</div>';
 	HTML += '		<div class="card-body">';
 	HTML += '			<ul class="list-unstyled ">';
+	HTML += '				<li class="cImg" ></li>';
 	HTML += '				<li class="cType" ></li>';
 	HTML += '				<li class="cNum" ></li>';
 	HTML += '				<li class="cRemain" ></li>';
@@ -462,6 +463,12 @@ function fn_turn(data){
 }
 
 function fn_openCard(data){
+	console.log(data);
+	var HTML = ''
+	for(var i=0; i<data.cardInfo.num; i++){
+		HTML += '<img src="/images/'+data.cardInfo.type+'.gif" />';
+	}
+	$('#sid_'+data.sid+' .cImg').html(HTML);
 	$('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
 	$('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
 	$('#sid_'+data.sid+' .cRemain').text(data.remain);

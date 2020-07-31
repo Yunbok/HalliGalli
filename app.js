@@ -2,10 +2,10 @@ var express = require('express');
 var app = require('express')();
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
-var port = process.env.PORT || 8080;     
+var port = process.env.PORT || 8090; 
 
 
-//app.use('/s01', express.static(__dirname + '/s01'));
+app.use('/images', express.static(__dirname + '/images'));
 		
 app.get('/', function(req, res){
 	res.sendFile(__dirname + '/index.html');
