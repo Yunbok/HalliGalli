@@ -373,7 +373,7 @@ io.on('connection', function(socket){
 								users[i].cardInfo.cardCnt += 1;
 							}
 							else{
-								fn_turn(idx);
+								break;
 							}
 						}
 					}
