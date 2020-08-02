@@ -90,6 +90,8 @@ var cards = [
 var cardDeck = new Array();
 //뒤집혀 있는 카드들
 var openCards = [];
+//보너스
+var bonus = 0;
 //게임 시작여부
 var start = false;
 io.on('connection', function(socket){
@@ -183,13 +185,21 @@ io.on('connection', function(socket){
 		
 		if(socket.userInfo != undefined){
 			console.log('user remove: ' + socket.userInfo.name);
+			var idx = users.findIndex(item => item.sid === socket.id);
+			if(users[idx].userInfo.isPlayer == true && (users[idx].cardInfo.cardCnt > 0 || users[idx].cardInfo.openCards > 0)){
+				for(var i = 0;i<users[idx].cardInfo.cardCnt;i++){
+					var cid = users[idx].cardInfo.cardList.dequeue();
+					cardDeck.push(cid);
+				}
+				bonus += users[idx].cardInfo.cardCnt + users[idx].cardInfo.openCards;
+				io.emit('bonus', {bonus: bonus});
+			}
 			// 유저 삭제
 			users.splice(users.findIndex(item => item.sid === socket.id), 1);
 			var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
 			//호스트 접속해제시 호스트변경
 			if(socket.id === host){
 				if(users.length > 0 && playerCnt > 0){
-					var idx = users.findIndex(item => item.sid === socket.id);
 					if((users.filter(users => users.userInfo.isPlayer)).length > (idx+1)){
 						if(users[idx+1].userInfo.isPlayer){
 							users[idx+1].userInfo.isHost = true;
@@ -281,7 +291,8 @@ io.on('connection', function(socket){
 					// 최초 카드세팅
 					fn_setCard();
 					//보너스 카드 수
-					io.emit('bonus', {bonus: cardDeck.length});
+					bonus = cardDeck.length;
+					io.emit('bonus', {bonus: bonus});
 					// 접속된 모든 클라이언트에게 메시지를 전송한다
 					io.emit('start', socket.userInfo);
 				
@@ -302,7 +313,7 @@ io.on('connection', function(socket){
 		
 		var idx = users.findIndex(item => item.sid === socket.id);
 		
-		if(socket.userInfo.isPlayer == true && users[idx].userInfo.isOut == false ){
+		if(users[idx].userInfo.isPlayer == true && users[idx].userInfo.isOut == false ){
 			// 순서도 체크해야겟지?
 			
 			var cid = users[idx].cardInfo.cardList.dequeue();
@@ -352,7 +363,8 @@ io.on('connection', function(socket){
 					outObj[i].disconnect();
 				}
 				io.emit('success', users);
-				io.emit('bonus', {bonus: cardDeck.length});
+				bonus = 0;
+				io.emit('bonus', {bonus: bonus});
 			}
 			else{
 				if(users[idx].cardInfo.cardCnt == 0){
