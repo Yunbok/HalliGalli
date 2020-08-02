@@ -186,6 +186,8 @@ io.on('connection', function(socket){
 		if(socket.userInfo != undefined){
 			console.log('user remove: ' + socket.userInfo.name);
 			var idx = users.findIndex(item => item.sid === socket.id);
+			
+			//카드가 남아잇는 플레이어 종료시 남은 카드 보너스에 추가
 			if(users[idx].userInfo.isPlayer == true && (users[idx].cardInfo.cardCnt > 0 || users[idx].cardInfo.openCards > 0)){
 				for(var i = 0;i<users[idx].cardInfo.cardCnt;i++){
 					var cid = users[idx].cardInfo.cardList.dequeue();
@@ -194,9 +196,11 @@ io.on('connection', function(socket){
 				bonus += users[idx].cardInfo.cardCnt + users[idx].cardInfo.openCards;
 				io.emit('bonus', {bonus: bonus});
 			}
+			
 			// 유저 삭제
 			users.splice(users.findIndex(item => item.sid === socket.id), 1);
 			var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
+			
 			//호스트 접속해제시 호스트변경
 			if(socket.id === host){
 				if(users.length > 0 && playerCnt > 0){
@@ -313,6 +317,7 @@ io.on('connection', function(socket){
 		
 		var idx = users.findIndex(item => item.sid === socket.id);
 		
+		//플래이어 체크 & 아웃여부 체크
 		if(users[idx].userInfo.isPlayer == true && users[idx].userInfo.isOut == false ){
 			// 순서도 체크해야겟지?
 			
@@ -334,14 +339,19 @@ io.on('connection', function(socket){
 		console.log(socket.userInfo);
 		var idx = users.findIndex(item => item.sid === socket.id);
 		var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
+		
+		//플래이어 체크 & 아웃여부 체크
 		if(socket.userInfo.isPlayer == true && users[idx].userInfo.isOut == false){
 			var result = fn_bellCheck(socket.id);
+			
+			//성공시
 			if(result){
 				for(var i=0;i<openCards.length;i++){
 					openCards[i].openCard.cid = 0;
 				}
 				console.log(cardDeck.length);
 				var length = cardDeck.length;
+				//성공한 플레이어에게 카드덱(오픈된 카드&보너스)에 카드 추가
 				for(var i=0;i<length;i++){
 					var target = cardDeck.splice(Math.floor(0), 1)[0];
 					console.log("target"+target);
@@ -350,6 +360,8 @@ io.on('connection', function(socket){
 				}
 				console.log(users[idx].cardInfo.cardList);
 				var outObj = new Array();
+				
+				//각 플레이어 오픈 카드 초기화 및 남은 카드 수 0인 플레이어 아웃처리
 				for(var i=0; i<playerCnt; i++){
 					console.log(users[i]);
 					users[i].cardInfo.openCards = 0;
@@ -359,21 +371,35 @@ io.on('connection', function(socket){
 						outObj.push(io.of("/").connected[users[i].userInfo.sid]);
 					}
 				}
+				//아웃된 플레이어 내쫓음
 				for(var i=0; i<outObj.length; i++){
 					outObj[i].disconnect();
 				}
 				io.emit('success', users);
+				
+				//성공한 플레이어가 턴이 아닐시 턴을 가져감
+				if(!users[idx].userInfo.isTurn){
+					var turnIdx = users.findIndex(item => item.userInfo.isTurn === true);
+					users[turnIdx].userInfo.isTurn = false;
+					users[idx].userInfo.isTurn = true;
+				}
+				//보너스 초기화
 				bonus = 0;
 				io.emit('bonus', {bonus: bonus});
 			}
+			
+			//실패시
 			else{
+				//카드수 0인 플레이어면 아웃
 				if(users[idx].cardInfo.cardCnt == 0){
 					users[idx].userInfo.isOut = true;
 					io.emit('out',  {sid: socket.id});
 					socket.disconnect();
 				}
 				else{
+					//다른 플레이어에게 카드 1장씩 줌
 					for(var i=0; i<playerCnt; i++){
+						//자기 자신 제외
 						if(socket.id === users[i].userInfo.sid || users[i].userInfo.isOut == true){
 							continue;
 						}
@@ -389,7 +415,8 @@ io.on('connection', function(socket){
 							}
 						}
 					}
-					if(users[idx].cardInfo.cardCnt == 0){
+					//벨을 누른 플레이어가 턴이고 카드 수가 0이 되면 턴 넘김
+					if(users[idx].cardInfo.cardCnt == 0 && users[idx].userInfo.isTurn){
 						fn_turn(idx);
 					}
 				}
@@ -451,6 +478,7 @@ function fn_setCard(){
 			cardList : cardList,
 			openCards : 0
 		};
+		//각 플레이에게 1/n으로 랜덤하게 카드부여
 		 for(var j=0;j<Math.floor(56/playerCnt);j++){
 			 let target = cardDeck.splice(Math.floor(Math.random() * cardDeck.length), 1)[0];
 		 	 cardInfo.cardCnt +=1;
@@ -458,12 +486,14 @@ function fn_setCard(){
 		 }
 		 users[i].cardInfo = cardInfo;
 		 var sid = users[i].userInfo.sid;
+		//각 플레이어에 오픈카드를 저장할 공간 생성
 		 var openCard = {
 			sid: sid,
 			cid: 0
 		};
 		 openCards.push({openCard : openCard});
 	 }
+	//호스트에게 턴을 줌
 	var num = users.findIndex(item => item.userInfo.sid === host);
 	users[num].userInfo.isTurn = true;
 	console.log(users[num].userInfo);
@@ -476,6 +506,7 @@ function fn_turn(idx){
 	users[idx].userInfo.isTurn = false;
 	var turnIdx = idx;
 	var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
+	//플레이어 수가 2명 미만시 게임종료
 	if(playerCnt<2){
 		start = false;
 		cardDeck = new Array();
@@ -503,10 +534,12 @@ function fn_turn(idx){
 }
 
 function fn_end(){
+	//이웃안된 플레이어가 1명일시 게임종료
 	var survivor = (users.filter(users => !users.userInfo.isOut)).length;
 	if(survivor == 1){
 		start = false;
 		var idx = users.findIndex(item => !item.userInfo.isOut);
+		//카드덱, 오픈된 카드, 보너스 초기화
 		cardDeck = new Array();
 		openCards = [];
 		var bonus = 0;
