@@ -521,14 +521,14 @@ function fn_turn(data){
 function fn_openCard(data){
 	console.log(data);
 	var HTML = '';
-	for(var i=0; i<data.cardInfo.num; i++){
+	for(var i=0; i<data.cardImageInfo.num; i++){
 		HTML += '<img src="/images/'+data.cardInfo.type+'.gif" />';
 	}
 	$('#sid_'+data.sid+' .cImg').html(HTML);
-	$('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
-	$('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
-	$('#sid_'+data.sid+' .cRemain').text(data.remain);
-	$('#sid_'+data.sid+' .cOpenCards').text(data.cardInfo2.openCards);
+	$('#sid_'+data.sid+' .cType').text(data.cardImageInfo.type);
+	$('#sid_'+data.sid+' .cNum').text(data.cardImageInfo.num);
+	$('#sid_'+data.sid+' .cRemain').text(data.cardInfo.cardCnt);
+	$('#sid_'+data.sid+' .cOpenCards').text(data.cardInfo.openCards);
 }
 
 function fn_success(data){
@@ -537,14 +537,33 @@ function fn_success(data){
 	for(var i = 0; i<data.length; i++){	
 		if(data[i].userInfo.isPlayer){
 			$('#sid_'+data[i].sid+' .cRemain').text(data[i].cardInfo.cardCnt);
-			$('#sid_'+data[i].sid+' .cImg').html('');
-			$('#sid_'+data[i].sid+' .cType').text('');
-			$('#sid_'+data[i].sid+' .cNum').text('');
-			$('#sid_'+data[i].sid+' .cOpenCards').text('');
+			fn_resetView(data[i].sid);
+			// $('#sid_'+data[i].sid+' .cImg').html('');
+			// $('#sid_'+data[i].sid+' .cType').text('');
+			// $('#sid_'+data[i].sid+' .cNum').text('');
+			// $('#sid_'+data[i].sid+' .cOpenCards').text('');
 		}
 	}
 }
-	
+function fn_end(data){
+	$('#sid_'+data.sid+' .cRemain').text('');
+	fn_resetView(data.sid);
+	// $('#sid_'+data.sid+' .cImg').html('');
+	// $('#sid_'+data.sid+' .cType').text('');
+	// $('#sid_'+data.sid+' .cNum').text('');
+	// $('#sid_'+data.sid+' .cOpenCards').text('');
+	if(data.sid == socket.id){	
+		$('#globalBtn').attr('btn', '');
+		fn_gameInit(data);
+	}
+}
+function fn_resetView(sid){
+	//$('#sid_'+sid+' .cRemain').text('');
+	$('#sid_'+sid+' .cImg').html('');
+	$('#sid_'+sid+' .cType').text('');
+	$('#sid_'+sid+' .cNum').text('');
+	$('#sid_'+sid+' .cOpenCards').text('');
+}
 function fn_fail(data){
 	// $('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
 	// $('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
@@ -559,17 +578,7 @@ function fn_bonus(data){
 	$('#bonusCnt').text(data.bonus); 
 }
 	
-function fn_end(data){
-	$('#sid_'+data.sid+' .cRemain').text('');
-	$('#sid_'+data.sid+' .cImg').html('');
-	$('#sid_'+data.sid+' .cType').text('');
-	$('#sid_'+data.sid+' .cNum').text('');
-	$('#sid_'+data.sid+' .cOpenCards').text('');
-	if(data.sid == socket.id){	
-		$('#globalBtn').attr('btn', '');
-		fn_gameInit(data);
-	}
-}
+
 	
 function fn_out(data){
 	if(data.sid == player.sid){
