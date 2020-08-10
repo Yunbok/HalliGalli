@@ -212,7 +212,7 @@ io.on('connection', function(socket){
 					}
 					else{
 						var num = users.findIndex(item => item.userInfo.isPlayer);
-						fn_hostSet(suers[num].userInfo);
+						fn_hostSet(users[num].userInfo);
 					}
 					console.log("host out");
 				}

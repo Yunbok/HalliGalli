@@ -522,7 +522,7 @@ function fn_openCard(data){
 	console.log(data);
 	var HTML = '';
 	for(var i=0; i<data.cardImageInfo.num; i++){
-		HTML += '<img src="/images/'+data.cardInfo.type+'.gif" />';
+		HTML += '<img src="/images/'+data.cardImageInfo.type+'.gif" />';
 	}
 	$('#sid_'+data.sid+' .cImg').html(HTML);
 	$('#sid_'+data.sid+' .cType').text(data.cardImageInfo.type);
