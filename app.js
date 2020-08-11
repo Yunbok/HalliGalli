@@ -23,11 +23,28 @@ var users = [];
 // 방장 sid
 var host;
 
+//윤복추가 카드세팅 알고리즘 
+var index = [5,3,3,2,1];
+var cards = [];
+var cardNum =0;
+var i = 1;
+for(var j = 1; j<=4 ; j++){
+	cardNum = 0;
+	for(var k = 0; k<5; k++){
+		cardNum++;
+		for(var x =0; x < index[k];x ++){
+			cards.push({cid: i, type: j, num: cardNum});
+			i++;
+		}
+	}
+}
+
 // cTypeCode
 // 1: 딸기 1*5, 2*3, 3*3, 4*2, 5*1
 // 2: 바나나 1*5, 2*3, 3*3, 4*2, 5*1
 // 3: 라임 1*5, 2*3, 3*3, 4*2, 5*1
 // 4: 자두 1*5, 2*3, 3*3, 4*2, 5*1
+/*
 var cards = [
 	{cid: 1, type: 1, num: 1},
 	{cid: 2, type: 1, num: 1},
@@ -86,6 +103,7 @@ var cards = [
 	{cid: 55, type: 4, num: 4},
 	{cid: 56, type: 4, num: 5}
 ];
+*/
 //카드덱 뒤집은 카드들
 var cardDeck = new Array();
 //뒤집혀 있는 카드들
@@ -341,7 +359,6 @@ io.on('connection', function(socket){
 				for(var i=0;i<openCards.length;i++){
 					openCards[i].openCard.cid = 0;
 				}
-				console.log(cardDeck.length);
 				var length = cardDeck.length;
 				//성공한 플레이어에게 카드덱(오픈된 카드&보너스)에 카드 추가
 				for(var i=0;i<length;i++){
@@ -553,8 +570,8 @@ function fn_end(){
 		var idx = users.findIndex(item => !item.userInfo.isOut);
 		//카드덱, 오픈된 카드, 보너스 초기화
 		cardDeck = new Array();
-		openCards = [];
-		var bonus = 0;
+		openCards = new Array();
+		bonus = 0;
 		users[idx].userInfo.isTurn = false;
 		io.emit('end',  users[idx].userInfo);
 	}
@@ -565,10 +582,16 @@ function fn_hostSet(userInfo){
 	io.emit('host', userInfo);
 	host = userInfo.sid;
 }
-
-// function fn_random(num){
-// 	return Math.floor(Math.random() * num);
-// }
+function shuffle(array) { 
+	var j, x, i;
+	for (i = array.length; i; i -= 1) {
+		j = Math.floor(Math.random() * i);
+		x = array[i - 1];
+		array[i - 1] = array[j];
+		array[j] = x;
+	} 
+	return array;
+}
 class Queue {
 	constructor() {
 		this._arr = [];
