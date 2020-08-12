@@ -211,6 +211,10 @@ io.on('connection', function(socket){
 				bonus += users[idx].cardInfo.cardCnt + users[idx].cardInfo.openCards;
 				io.emit('bonus', {bonus: bonus});
 			}
+			//턴인 플레이어가 접속종료시
+			if(users[idx].userInfo.isTurn){
+				fn_turn(idx);
+			}
 			
 			// 유저 삭제
 			users.splice(users.findIndex(item => item.sid === socket.id), 1);
