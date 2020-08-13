@@ -219,7 +219,8 @@ io.on('connection', function(socket){
 			// 유저 삭제
 			users.splice(users.findIndex(item => item.sid === socket.id), 1);
 			var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
-			
+			openCards.splice(openCards.findIndex(item => item.openCard.sid === socket.id), 1);
+
 			//호스트 접속해제시 호스트변경
 			if(socket.id === host){
 				if(users.length > 0 && playerCnt > 0){
@@ -384,18 +385,19 @@ io.on('connection', function(socket){
 						outObj.push(io.of("/").connected[users[i].userInfo.sid]);
 					}
 				}
-				//아웃된 플레이어 내쫓음
-				for(var i=0; i<outObj.length; i++){
-					outObj[i].disconnect();
-				}
-				io.emit('success', users);
-				
 				//성공한 플레이어가 턴이 아닐시 턴을 가져감
 				if(!users[idx].userInfo.isTurn){
 					var turnIdx = users.findIndex(item => item.userInfo.isTurn === true);
 					users[turnIdx].userInfo.isTurn = false;
 					users[idx].userInfo.isTurn = true;
 				}
+				
+				//아웃된 플레이어 내쫓음
+				for(var i=0; i<outObj.length; i++){
+					outObj[i].disconnect();
+				}
+				io.emit('success', users);
+				
 				//보너스 초기화
 				bonus = 0;
 				io.emit('bonus', {bonus: bonus});
