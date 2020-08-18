@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>Socket.io Chat Example</title>
+	<!-- jquery 3.5.1 cdn start -->
+	<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+	<!-- jquery 3.5.1 cdn end -->
+	
+	
+	<!-- bootstrap 4.5.0 cdn start -->
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+	<!-- bootstrap 4.5.0 cdn end -->
+	
+	<!-- socket.io serverVersion start -->
+	<script src="/socket.io/socket.io.js"></script>
+	<!-- socket.io serverVersion end -->
+<script>
+function fn_openCard(){
+	$('.card-in').toggleClass('card-in-flip-back');
+}
+</script>
+	<style>
+		div.col {
+			border: 1px solid #dadada;
+			background-color: #eeeeee;
+		}
+		.card-header {
+			padding: .25rem;
+		}
+		.card-body {
+			height: 200px;
+		}
+		.card-remain {
+			position: absolute; 
+			text-align: center;
+			top:50px; 
+			left: 10px; 
+			border: solid 1px;
+			width: 15%; 
+			/* height: 15%;  */
+		}
+		.card-remain > p{
+			text-align: center;
+		}
+		.card-frame {
+			/* background:#dadada;  */
+			height:100%; 
+			text-align: center;
+		}
+		.card-shadow {
+			display: inline-block;
+			width: 60%;
+			border-radius: 1rem;
+			box-shadow: 10px 10px 5px grey;
+		}
+		.card-in {
+			/* background:#ccc;  */
+			height:100%; 
+			/* width:60%;  */
+			display: inline-block; 
+			border-radius: 1rem; 
+			border: solid 1px; 
+			padding: 10px;
+			
+			transition: transform 0.8s;
+		}
+		.card-in-flip-back {
+			transition: transform 0.8s;
+			transform: rotateY(180deg);
+			background-position: center center;
+			background-repeat: no-repeat;
+			background-size: cover;
+			/* background-image: url('http://opengameart.org/sites/default/files/styles/medium/public/card%20back%20purple.png'); */
+			background-image: url('/images/bg.jpg');
+		}
+		.card-in-flip-back > div > div {
+			visibility: hidden;
+		}
+		.card-in-1 {
+			-ms-transform: rotate(-45deg); -webkit-transform: rotate(-45deg); transform: rotate(-45deg);
+		}
+		.card-in-2 {
+			-ms-transform: rotate(-135deg); -webkit-transform: rotate(-135deg); transform: rotate(-135deg);
+		}
+		.card-in-3 {
+			-ms-transform: rotate(45deg); -webkit-transform: rotate(45deg); transform: rotate(45deg);
+		}
+		.card-in-4 {
+			-ms-transform: rotate(315deg); -webkit-transform: rotate(315deg); transform: rotate(315deg);
+		}
+		.card-icons > div {
+			position: relative;
+			width: 40px;
+			height: 40px;
+			/* border: solid 1px; */
+			display: none;
+			background-size: contain;
+		}
+		.card-icons > .card-3 {
+			width: 100%;
+		}
+		.card-type-1 > div {
+			background: url('/images/1.gif') no-repeat center center;
+		}
+		.card-type-2 > div {
+			background: url('/images/2.gif') no-repeat center center;
+		}
+		.card-type-3 > div {
+			background: url('/images/3.gif') no-repeat center center;
+		}
+		.card-type-4 > div {
+			background: url('/images/4.gif') no-repeat center center;
+		}
+		.card-type-5 > div {
+			background: url('/images/5.gif') no-repeat center center;
+		}
+		.card-1 {
+			/* top: 30%; left: 37%; */
+		}
+		.card-2 {
+			/* top: 30%; left: 62%; */
+		}
+		.card-3 {
+			/* top: 50%; left: 50%; */
+		}
+		.card-4 {
+			/* top: 70%; left: 37%; */
+		}
+		.card-5 {
+			/* top: 70%; left: 62%; */
+		}
+
+		.card-cnt-1 > .card-3 {
+			display: inline-block; 
+		}
+		.card-cnt-2 > .card-1
+		, .card-cnt-2 > .card-5 {
+			display: inline-block; 
+		}
+		.card-cnt-3 > .card-1
+		, .card-cnt-3 > .card-3
+		, .card-cnt-3 > .card-5 {
+			display: inline-block; 
+		}
+		.card-cnt-4 > .card-1
+		, .card-cnt-4 > .card-2
+		, .card-cnt-4 > .card-4
+		, .card-cnt-4 > .card-5 {
+			display: inline-block; 
+		}
+		.card-cnt-5 > .card-1
+		, .card-cnt-5 > .card-2
+		, .card-cnt-5 > .card-3
+		, .card-cnt-5 > .card-4
+		, .card-cnt-5 > .card-5 {
+			display: inline-block; 
+		}
+
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="row row-cols-1 row-cols-xl-2">
+			<div class="col">
+				<!-- user card start -->
+				<div class="row row-cols-2 row-cols-xl-2" id="playerDiv" >
+
+					<div class="col p-2" id="sid_123" >
+						<div class="card">
+							<div class="card-header">
+								<h5>dDD</h5>
+							</div>
+							<div class="card-body flip-container" ontouchstart="this.classList.toggle('hover');">
+								<div class="card-remain" >
+									<div>20</div>
+									<div>20</div>
+								</div>
+								<div class="card-frame " >
+									<div class="card-shadow">
+										<div class="card-in cc" >
+											<div class="card-icons card-type-3 card-cnt-5" >
+												<div class="card-1 " ></div>
+												<div class="card-2 " ></div>
+												<div class="card-3 " ></div>
+												<div class="card-4 " ></div>
+												<div class="card-5 " ></div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col p-2" id="sid_123" >
+						<div class="card">
+							<div class="card-header">
+								<h5>dDD</h5>
+							</div>
+							<div class="card-body">
+								<div style="position:absolute; top:50px; left: 10px; height: 50px; border: solid 1px;">
+									aaaa
+								</div>
+								<div class="card-frame" >
+									<div class="card-in" >
+										<div class="card-icons">
+											<div class="card-2-1" >1</div>
+											<div class="card-2-2" >2</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col p-2" id="sid_123" >
+						<div class="card">
+							<div class="card-header">
+								<h5>dDD</h5>
+							</div>
+							<div class="card-body">
+								<div style="position:absolute; top:50px; left: 10px; height: 50px; border: solid 1px;">
+									aaaa
+								</div>
+								<div class="card-frame" >
+									<div class="card-in" >
+										<div class="card-icons">
+											<div class="card-3-1" >1</div>
+											<div class="card-3-2" >2</div>
+											<div class="card-3-3" >3</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col p-2" id="sid_123" >
+						<div class="card">
+							<div class="card-header">
+								<h5>dDD</h5>
+							</div>
+							<div class="card-body">
+								<div style="position:absolute; top:50px; left: 10px; height: 50px; border: solid 1px;">
+									aaaa
+								</div>
+								<div class="card-frame" >
+									<div class="card-in" >
+										<div class="card-icons">
+											<div class="card-4-1" >1</div>
+											<div class="card-4-2" >2</div>
+											<div class="card-4-3" >3</div>
+											<div class="card-4-4" >4</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+				</div>
+				<!-- user card end -->
+				
+				<div class="row">
+					<div class="col">
+						<div>보너스: <span id="bonusCnt">0</span></div>
+					</div>
+					<div class="col" >
+						<button type="button" class="btn btn-block" id="openBtn" >카드오픈</button>
+					</div>
+					<div class="col">
+						<button type="button" class="btn btn-block" id="globalBtn" btn="" ></button>
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				<form>
+					<div class="form-group">
+						<label for="chatDisplay">채팅로그</label>
+						<textarea class="form-control" id="chatDisplay" rows="3" readonly ></textarea>
+					</div>
+					
+					<div class="form-row align-items-center">
+						<div class="col-auto my-1">
+							<label for="chatInput">사용자명</label>
+						</div>
+						<div class="col my-1">
+							<input type="text" class="form-control" id="chatInput" placeholder="dadadak.." />
+						</div>
+						<div class="col-auto my-1">
+							<button type="button" class="btn btn-primary" id="chatSend" >전송</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
