@@ -2,7 +2,7 @@
 =============================
 ## SweeTest 
   ### 1팀 **nemo** / dodo / noi
-  ### 2팀  **sia** / kprac / kaka
+  ### 2팀  **sia** / kprac / [kaka](https://github.com/KimsPractice/Sweetest_Team2)
   //단체사진 or sweetest 로고 들어갈예정
   
 * 맡은 임무
