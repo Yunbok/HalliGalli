@@ -24,6 +24,142 @@
 			border: 1px solid #dadada;
 			background-color: #eeeeee;
 		}
+		.card-header {
+			padding: .25rem;
+		}
+		.card-body {
+			height: 200px;
+		}
+		.card-remain {
+			display: none;
+			position: absolute; 
+			text-align: center;
+			top:50px; 
+			left: 10px; 
+			border: solid 1px;
+			width: 15%; 
+			/* height: 15%;  */
+		}
+		.card-remain > p{
+			text-align: center;
+		}
+		.card-frame {
+			/* background:#dadada;  */
+			height:100%; 
+			text-align: center;
+		}
+		.card-shadow {
+			display: inline-block;
+			width: 60%;
+			border-radius: 1rem;
+			box-shadow: 10px 10px 5px grey;
+		}
+		.card-in {
+			/* background:#ccc;  */
+			height:100%; 
+			/* width:60%;  */
+			display: inline-block; 
+			border-radius: 1rem; 
+			border: solid 1px; 
+			padding: 10px;
+			
+			transition: transform 0.8s;
+		}
+		.card-in-flip-back {
+			transition: transform 0.8s;
+			transform: rotateY(180deg);
+			background-position: center center;
+			background-repeat: no-repeat;
+			background-size: cover;
+			/* background-image: url('http://opengameart.org/sites/default/files/styles/medium/public/card%20back%20purple.png'); */
+			background-image: url('/images/bg.jpg');
+		}
+		.card-in-flip-back > div > div {
+			visibility: hidden;
+		}
+		.card-in-1 {
+			-ms-transform: rotate(-45deg); -webkit-transform: rotate(-45deg); transform: rotate(-45deg);
+		}
+		.card-in-2 {
+			-ms-transform: rotate(-135deg); -webkit-transform: rotate(-135deg); transform: rotate(-135deg);
+		}
+		.card-in-3 {
+			-ms-transform: rotate(45deg); -webkit-transform: rotate(45deg); transform: rotate(45deg);
+		}
+		.card-in-4 {
+			-ms-transform: rotate(315deg); -webkit-transform: rotate(315deg); transform: rotate(315deg);
+		}
+		.card-icons > div {
+			position: relative;
+			width: 40px;
+			height: 40px;
+			/* border: solid 1px; */
+			/* display: none; */
+			display: inline-block;
+			visibility: hidden;
+			background-size: contain;
+		}
+		.card-icons > .card-3 {
+			width: 100%;
+		}
+		.card-type-1 > div {
+			background: url('/images/1.gif') no-repeat center center;
+		}
+		.card-type-2 > div {
+			background: url('/images/2.gif') no-repeat center center;
+		}
+		.card-type-3 > div {
+			background: url('/images/3.gif') no-repeat center center;
+		}
+		.card-type-4 > div {
+			background: url('/images/4.gif') no-repeat center center;
+		}
+		.card-type-5 > div {
+			background: url('/images/5.gif') no-repeat center center;
+		}
+		.card-1 {
+			/* top: 30%; left: 37%; */
+		}
+		.card-2 {
+			/* top: 30%; left: 62%; */
+		}
+		.card-3 {
+			/* top: 50%; left: 50%; */
+		}
+		.card-4 {
+			/* top: 70%; left: 37%; */
+		}
+		.card-5 {
+			/* top: 70%; left: 62%; */
+		}
+
+		.card-cnt-1 > .card-3 {
+			visibility: visible;
+		}
+		.card-cnt-2 > .card-1
+		, .card-cnt-2 > .card-5 {
+			visibility: visible;
+		}
+		.card-cnt-3 > .card-1
+		, .card-cnt-3 > .card-3
+		, .card-cnt-3 > .card-5 {
+			visibility: visible;
+		}
+		.card-cnt-4 > .card-1
+		, .card-cnt-4 > .card-2
+		, .card-cnt-4 > .card-4
+		, .card-cnt-4 > .card-5 {
+			visibility: visible;
+		}
+		.card-cnt-5 > .card-1
+		, .card-cnt-5 > .card-2
+		, .card-cnt-5 > .card-3
+		, .card-cnt-5 > .card-4
+		, .card-cnt-5 > .card-5 {
+			visibility: visible;
+		}
+
+
 	</style>
 
 <script>
@@ -343,19 +479,38 @@ function fn_currPlayer(data){
 
 function fn_addPlayer(data){
 	var HTML = '';
-	HTML += '<div class="col py-3" id="sid_'+data.sid+'" >';
-	HTML += '	<div class="card">';
-	HTML += '		<div class="card-header">';
+	HTML += '<div class="col p-2" id="sid_'+data.sid+'" >';
+	HTML += '	<div class="card" >';
+	HTML += '		<div class="card-header" >';
 	HTML += '			<h4>'+data.name+'</h4>';
 	HTML += '		</div>';
-	HTML += '		<div class="card-body">';
-	HTML += '			<ul class="list-unstyled ">';
-	HTML += '				<li class="cImg" ></li>';
-	HTML += '				<li class="cType" ></li>';
-	HTML += '				<li class="cNum" ></li>';
-	HTML += '				<li class="cRemain" ></li>';
-	HTML += '				<li class="cOpenCards" ></li>';
-	HTML += '			</ul>';
+	HTML += '		<div class="card-body" >';
+	HTML += '			<div class="card-remain" >';
+	HTML += '				<div class="card-blind" >0</div>';
+	HTML += '				<div class="card-opened" >0</div>';
+	HTML += '			</div>';
+	HTML += '			<div class="card-frame" >';
+	HTML += '				<div class="card-shadow" >';
+	HTML += '					<div class="card-in" >';
+	HTML += '						<div class="card-icons card-type-0 card-cnt-5" >';
+	HTML += '							<div class="card-1" ></div>';
+	HTML += '							<div class="card-2" ></div>';
+	HTML += '							<div class="card-3" ></div>';
+	HTML += '							<div class="card-4" ></div>';
+	HTML += '							<div class="card-5" ></div>';
+	HTML += '						</div>';
+	HTML += '					</div>';
+	HTML += '				</div>';
+	HTML += '			</div>';
+
+	// HTML += '			<ul class="list-unstyled ">';
+	// HTML += '				<li class="cImg" ></li>';
+	// HTML += '				<li class="cType" ></li>';
+	// HTML += '				<li class="cNum" ></li>';
+	// HTML += '				<li class="cRemain" ></li>';
+	// HTML += '				<li class="cOpenCards" ></li>';
+	// HTML += '			</ul>';
+
 	HTML += '		</div>';
 	HTML += '	</div>';
 	HTML += '</div>';
@@ -364,6 +519,9 @@ function fn_addPlayer(data){
 	
 function fn_setHost(data){
 	$('#sid_'+data.sid+' .card-header').addClass('bg-primary');
+	
+	// 방장의 경우 자동레디
+	$('#sid_'+data.sid+' .card-in').addClass('card-in-flip-back');
 }
 	
 function fn_setMe(data){
@@ -396,6 +554,9 @@ function fn_gameInit(data){
 			$('#globalBtn').addClass('btn-secondary');
 			$('#globalBtn').attr('act', '');
 			// $('#globalBtn').text('대기');
+
+			// 방장의 경우 자동레디
+			$('.card-in').addClass('card-in-flip-back');
 		}
 		else{
 			$('#globalBtn').addClass('btn-warning');
@@ -434,6 +595,9 @@ function fn_globalBtnText(){
 function fn_readyOff(data){
 	$('#sid_'+data.sid+' .card-header').removeClass('bg-primary bg-warning bg-secondary');
 	// $('#sid_'+data.sid+' .card-header').addClass('btn-warning');
+
+	
+	$('#sid_'+data.sid+' .card-in').removeClass('card-in-flip-back');
 	
 	if(player.sid == data.sid){
 		player = data;
@@ -449,6 +613,9 @@ function fn_readyOff(data){
 function fn_readyOn(data){
 	$('#sid_'+data.sid+' .card-header').removeClass('bg-primary bg-warning bg-secondary');
 	$('#sid_'+data.sid+' .card-header').addClass('bg-warning');
+	
+	
+	$('#sid_'+data.sid+' .card-in').addClass('card-in-flip-back');
 	
 	if(player.sid == data.sid){
 		player = data;
@@ -494,6 +661,7 @@ function fn_startOn(data){
 function fn_start(data){
 	$('.card-header').removeClass('bg-primary bg-warning bg-secondary');
 	// $('#sid_'+data.sid+' .card-header').addClass('bg-warning');
+	$('.card-remain').show();
 	
 	if(player.isPlayer == true){
 		// player = data;
@@ -521,14 +689,24 @@ function fn_turn(data){
 function fn_openCard(data){
 	console.log(data);
 	var HTML = '';
-	for(var i=0; i<data.cardImageInfo.num; i++){
-		HTML += '<img src="/images/'+data.cardImageInfo.type+'.gif" />';
-	}
-	$('#sid_'+data.sid+' .cImg').html(HTML);
-	$('#sid_'+data.sid+' .cType').text(data.cardImageInfo.type);
-	$('#sid_'+data.sid+' .cNum').text(data.cardImageInfo.num);
-	$('#sid_'+data.sid+' .cRemain').text(data.cardInfo.cardCnt);
-	$('#sid_'+data.sid+' .cOpenCards').text(data.cardInfo.openCards);
+	// for(var i=0; i<data.cardImageInfo.num; i++){
+	// 	HTML += '<img src="/images/'+data.cardImageInfo.type+'.gif" />';
+	// }
+	$('#sid_'+data.sid+' .card-in').removeClass('card-in-flip-back');
+	
+	$('#sid_'+data.sid+' .card-icons').removeClass('card-type-0 card-type-1 card-type-2 card-type-3 card-type-4 card-type-5');
+	$('#sid_'+data.sid+' .card-icons').removeClass('card-cnt-1 card-cnt-2 card-cnt-3 card-cnt-4 card-cnt-5');
+	$('#sid_'+data.sid+' .card-icons').addClass('card-type-'+data.cardImageInfo.type);
+	$('#sid_'+data.sid+' .card-icons').addClass('card-cnt-'+data.cardImageInfo.num);
+
+	$('#sid_'+data.sid+' .card-blind').text(data.cardInfo.cardCnt);
+	$('#sid_'+data.sid+' .card-opened').text(data.cardInfo.openCards);
+
+	// $('#sid_'+data.sid+' .cImg').html(HTML);
+	// $('#sid_'+data.sid+' .cType').text(data.cardImageInfo.type);
+	// $('#sid_'+data.sid+' .cNum').text(data.cardImageInfo.num);
+	// $('#sid_'+data.sid+' .cRemain').text(data.cardInfo.cardCnt);
+	// $('#sid_'+data.sid+' .cOpenCards').text(data.cardInfo.openCards);
 }
 
 function fn_success(data){
@@ -536,8 +714,9 @@ function fn_success(data){
 	// $('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
 	for(var i = 0; i<data.length; i++){	
 		if(data[i].userInfo.isPlayer){
-			$('#sid_'+data[i].sid+' .cRemain').text(data[i].cardInfo.cardCnt);
+			// $('#sid_'+data[i].sid+' .cRemain').text(data[i].cardInfo.cardCnt);
 			fn_resetView(data[i].sid);
+			$('#sid_'+data[i].sid+' .card-blind').text(data[i].cardInfo.cardCnt);
 			// $('#sid_'+data[i].sid+' .cImg').html('');
 			// $('#sid_'+data[i].sid+' .cType').text('');
 			// $('#sid_'+data[i].sid+' .cNum').text('');
@@ -546,8 +725,8 @@ function fn_success(data){
 	}
 }
 function fn_end(data){
-	$('#sid_'+data.sid+' .cRemain').text('');
 	fn_resetView(data.sid);
+	// $('#sid_'+data.sid+' .cRemain').text('');
 	// $('#sid_'+data.sid+' .cImg').html('');
 	// $('#sid_'+data.sid+' .cType').text('');
 	// $('#sid_'+data.sid+' .cNum').text('');
@@ -559,17 +738,24 @@ function fn_end(data){
 }
 function fn_resetView(sid){
 	//$('#sid_'+sid+' .cRemain').text('');
-	$('#sid_'+sid+' .cImg').html('');
-	$('#sid_'+sid+' .cType').text('');
-	$('#sid_'+sid+' .cNum').text('');
-	$('#sid_'+sid+' .cOpenCards').text('');
+	// $('#sid_'+sid+' .cImg').html('');
+	// $('#sid_'+sid+' .cType').text('');
+	// $('#sid_'+sid+' .cNum').text('');
+	// $('#sid_'+sid+' .cOpenCards').text('');
+
+	$('#sid_'+sid+' .card-in').addClass('card-in-flip-back');
+	$('#sid_'+sid+' .card-icons').removeClass('card-type-1 card-type-2 card-type-3 card-type-4 card-type-5');
+	$('#sid_'+sid+' .card-icons').removeClass('card-cnt-1 card-cnt-2 card-cnt-3 card-cnt-4 card-cnt-5');
+	$('#sid_'+sid+' .card-blind').text('0');
+	$('#sid_'+sid+' .card-opened').text('0');
 }
 function fn_fail(data){
 	// $('#sid_'+data.sid+' .cType').text(data.cardInfo.type);
 	// $('#sid_'+data.sid+' .cNum').text(data.cardInfo.num);
 	for(var i = 0; i<data.length; i++){	
 		if(data[i].userInfo.isPlayer){
-			$('#sid_'+data[i].sid+' .cRemain').text(data[i].cardInfo.cardCnt);
+			// $('#sid_'+data[i].sid+' .cRemain').text(data[i].cardInfo.cardCnt);
+			$('#sid_'+data[i].sid+' .card-blind').text(data[i].cardInfo.cardCnt);
 		}
 	}
 }
@@ -594,7 +780,7 @@ function fn_out(data){
 		<div class="row row-cols-1 row-cols-xl-2">
 			<div class="col">
 				<!-- user card start -->
-				<div class="row row-cols-2 row-cols-xl-4" id="playerDiv" >
+				<div class="row row-cols-2 row-cols-xl-2" id="playerDiv" >
 				</div>
 				<!-- user card end -->
 				
