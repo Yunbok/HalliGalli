@@ -24,11 +24,13 @@
 
 
 
-### 10주차 1팀 8월 18일자 사진
+### 1팀 8월 18일자 사진
   
 
 ![image](https://user-images.githubusercontent.com/30767280/90459387-2a2b7580-e13c-11ea-9103-c7de4d0b92c2.png)
 
 
+### 1팀 8월 19일자 사진
 
+![image](https://user-images.githubusercontent.com/30767280/90592250-1d804d80-e220-11ea-8ab9-2a12010332ab.png)
 
