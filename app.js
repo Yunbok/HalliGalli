@@ -201,21 +201,22 @@ io.on('connection', function(socket){
 		if(socket.userInfo != undefined){
 			console.log('user remove: ' + socket.userInfo.name);
 			var idx = users.findIndex(item => item.sid === socket.id);
-			
-			//카드가 남아잇는 플레이어 종료시 남은 카드 보너스에 추가
-			if(users[idx].userInfo.isPlayer == true && (users[idx].cardInfo.cardCnt > 0 || users[idx].cardInfo.openCards > 0)){
-				for(var i = 0;i<users[idx].cardInfo.cardCnt;i++){
-					var cid = users[idx].cardInfo.cardList.dequeue();
-					cardDeck.push(cid);
+			var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
+			if(start && playerCnt > 2){
+				//카드가 남아잇는 플레이어 종료시 남은 카드 보너스에 추가
+				if(users[idx].userInfo.isPlayer == true && (users[idx].cardInfo.cardCnt > 0 || users[idx].cardInfo.openCards > 0)){
+					for(var i = 0;i<users[idx].cardInfo.cardCnt;i++){
+						var cid = users[idx].cardInfo.cardList.dequeue();
+						cardDeck.push(cid);
+					}
+					bonus += users[idx].cardInfo.cardCnt + users[idx].cardInfo.openCards;
+					io.emit('bonus', {bonus: bonus});
 				}
-				bonus += users[idx].cardInfo.cardCnt + users[idx].cardInfo.openCards;
-				io.emit('bonus', {bonus: bonus});
+				//턴인 플레이어가 접속종료시
+				if(users[idx].userInfo.isTurn){
+					fn_turn(idx);
+				}
 			}
-			//턴인 플레이어가 접속종료시
-			if(users[idx].userInfo.isTurn){
-				fn_turn(idx);
-			}
-			
 			// 유저 삭제
 			users.splice(users.findIndex(item => item.sid === socket.id), 1);
 			var playerCnt = (users.filter(users => users.userInfo.isPlayer)).length;
