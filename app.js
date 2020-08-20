@@ -388,9 +388,10 @@ io.on('connection', function(socket){
 				}
 				//성공한 플레이어가 턴이 아닐시 턴을 가져감
 				if(!users[idx].userInfo.isTurn){
-					var turnIdx = users.findIndex(item => item.userInfo.isTurn === true);
+					var turnIdx = users.findIndex(item => item.userInfo.isTurn == true);
 					users[turnIdx].userInfo.isTurn = false;
 					users[idx].userInfo.isTurn = true;
+					io.emit('turn', {sid: users[idx].userInfo.sid});
 				}
 				
 				//아웃된 플레이어 내쫓음
